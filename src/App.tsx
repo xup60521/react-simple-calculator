@@ -14,7 +14,8 @@ export default function App() {
             setInput([]);
             return;
         }
-        if (e === "enter") {
+        const lastElm = input[input.length - 1]??undefined;
+        if (e === "enter" && !Number.isNaN(Number(lastElm))) {
             const changeX = input.map(d => {
                 if (d === "x") {
                     return "*"
@@ -26,7 +27,7 @@ export default function App() {
             return;
         }
 
-        const lastElm = input[input.length - 1]??undefined;
+        
         if (
             e === "del" &&
             input.length > 0 &&
@@ -74,7 +75,7 @@ export default function App() {
 
             return;
         }
-        if (!Number.isNaN(Number(lastElm)) && !lastElm.includes(".") && e === ".") {
+        if (!Number.isNaN(Number(lastElm)) && !lastElm.includes(".") && e === "." && input.length > 0) {
             setInput(prev => {
                 prev[prev.length - 1] = prev[prev.length - 1] + e
                 return [...prev]
@@ -84,12 +85,14 @@ export default function App() {
 
         if (
             ["+", "-", "x", "/"].includes(e) &&
-            !(lastElm in ["+", "-", "x", "/"])
+            !(["+", "-", "x", "/"].includes(lastElm)) && input.length > 0
         ) {
+            console.log(["+", "-", "x", "/"].includes(lastElm))
             setInput((prev) => [...prev, e]);
             return;
         }
     }
+    
     return (
         <main
             className={`w-screen h-screen overflow-hidden transition-all ${getColor(
