@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
-import "./DisplayScrollbar.css"
+import "./DisplayScrollbar.css";
 import { getColor } from "../utils/getColor";
-import { useTheme } from "./themeProvider";
+import { useAtomValue } from "jotai";
+import { themeAtom } from "../utils/state";
 
 export default function CalcDisplay({ input }: { input: string[] }) {
-    const theme = useTheme()
+    const theme = useAtomValue(themeAtom);
     const divRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (divRef.current) {
@@ -13,7 +14,16 @@ export default function CalcDisplay({ input }: { input: string[] }) {
     }, [input]);
     return (
         <div
-            className={`w-full h-24 rounded-xl ${getColor(theme, "bg-darker")} px-8 ${getColor(theme, "text-color-primary")} text-[2.5rem] font-bold flex items-center overflow-x-scroll ${getColor(theme, "scroll")}`}
+            className={`w-full h-24 rounded-xl ${getColor(
+                theme,
+                "bg-darker"
+            )} px-8 ${getColor(
+                theme,
+                "text-color-primary"
+            )} text-[2.5rem] font-bold flex items-center overflow-x-scroll ${getColor(
+                theme,
+                "scroll"
+            )}`}
             ref={divRef}
         >
             <div className="flex-grow"></div>

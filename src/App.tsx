@@ -2,12 +2,13 @@ import { useState } from "react";
 import CalcDisplay from "./components/CalcDisplay";
 import CalcHead from "./components/CalcHead";
 import CalcKeyboard from "./components/CalcKeyboard";
-import { useTheme } from "./components/themeProvider";
 import { getColor } from "./utils/getColor";
 import type { InputType } from "./type/input";
+import { useAtomValue } from "jotai";
+import { themeAtom } from "./utils/state";
 
 export default function App() {
-    const theme = useTheme();
+    const theme = useAtomValue(themeAtom)
     const [input, setInput] = useState<string[]>([]);
     function handleInput(e: InputType) {
         if (e === "reset") {
