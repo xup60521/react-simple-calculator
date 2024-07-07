@@ -1,113 +1,182 @@
-# Frontend Mentor - Calculator app solution
+# Frontend Mentor Challenge - Calculator app solution
 
-This is a solution to the [Calculator app challenge on Frontend Mentor](https://www.frontendmentor.io/challenges/calculator-app-9lteq5N29). Frontend Mentor challenges help you improve your coding skills by building realistic projects. 
-
-## Table of contents
-
-- [Overview](#overview)
-  - [The challenge](#the-challenge)
-  - [Screenshot](#screenshot)
-  - [Links](#links)
-- [My process](#my-process)
-  - [Built with](#built-with)
-  - [What I learned](#what-i-learned)
-  - [Continued development](#continued-development)
-  - [Useful resources](#useful-resources)
-- [Author](#author)
-- [Acknowledgments](#acknowledgments)
-
-**Note: Delete this note and update the table of contents based on what sections you keep.**
+This is a solution to the [Calculator app challenge on Frontend Mentor](https://www.frontendmentor.io/challenges/calculator-app-9lteq5N29 "https://www.frontendmentor.io/challenges/calculator-app-9lteq5N29").
 
 ## Overview
-
-### The challenge
 
 Users should be able to:
 
 - See the size of the elements adjust based on their device's screen size
-- Perform mathmatical operations like addition, subtraction, multiplication, and division
+
+- Perform mathematical operations like addition, subtraction, multiplication, and division
+
 - Adjust the color theme based on their preference
-- **Bonus**: Have their initial theme preference checked using `prefers-color-scheme` and have any additional changes saved in the browser
 
-### Screenshot
+Links:
 
-![](./screenshot.jpg)
+- GitHub Repo: <https://github.com/xup60521/react-simple-calculator>
 
-Add a screenshot of your solution. The easiest way to do this is to use Firefox to view your project, right-click the page and select "Take a Screenshot". You can choose either a full-height screenshot or a cropped one based on how long the page is. If it's very long, it might be best to crop it.
+- Live website: <https://xup60521.github.io/react-simple-calculator/>
 
-Alternatively, you can use a tool like [FireShot](https://getfireshot.com/) to take the screenshot. FireShot has a free option, so you don't need to purchase it. 
-
-Then crop/optimize/edit your image however you like, add it to your project, and update the file path in the image above.
-
-**Note: Delete this note and the paragraphs above when you add your screenshot. If you prefer not to add a screenshot, feel free to remove this entire section.**
-
-### Links
-
-- Solution URL: [Add solution URL here](https://your-solution-url.com)
-- Live Site URL: [Add live site URL here](https://your-live-site-url.com)
+```bash
+# install dependencies
+pnpm install
+# start dev server
+pnpm run dev
+```
 
 ## My process
 
 ### Built with
 
-- Semantic HTML5 markup
-- CSS custom properties
-- Flexbox
-- CSS Grid
-- Mobile-first workflow
-- [React](https://reactjs.org/) - JS library
-- [Next.js](https://nextjs.org/) - React framework
-- [Styled Components](https://styled-components.com/) - For styles
+- React (powered by vite)
 
-**Note: These are just examples. Delete this note and replace the list above with your own choices**
+- TailwindCSS
+
+- Jotai (global state management)
 
 ### What I learned
 
-Use this section to recap over some of your major learnings while working through this project. Writing these out and providing code samples of areas you want to highlight is a great way to reinforce your own knowledge.
+#### Theme change
 
-To see how you can add code snippets, see below:
+In this project, the calculator should have 3 themes, and user is able to freely change among them.
 
-```html
-<h1>Some HTML code I'm proud of</h1>
+Since the theme is going to be accessed from anywhere, it’s more reasonable to make it a global state.
+
+Though context API could help us achieve that, I decided to use `Jotai` to do so. Not only it is lightweight, performant global state management solution, its `atomWithStorage` automatically syncs localstorage with states.
+
+```tsx
+import { type Theme } from "../type/theme";
+import { atomWithStorage } from "jotai/utils";
+
+const STORAGE_KEY = "c8e4eafe-64f4-4457-a7d4-f4a25be92799";
+export const themeAtom = atomWithStorage<Theme>(STORAGE_KEY, "blue");
 ```
-```css
-.proud-of-this-css {
-  color: papayawhip;
+
+The usage is quite similar to context API and useState.
+
+```tsx
+const [theme, setTheme] = useAtom(themeAtom)
+```
+
+Now, we know which theme our app is currently on. Next we need to determine which color of each component of different theme is.
+
+Here we define a `getColor` function. Based on the input theme and component name, it returns the corresponding tailwind utility class.
+
+```tsx
+import type { Theme } from "../type/theme";
+
+type ComponentType =
+    | "bg"
+    | "bg-dark"
+    | "bg-darker"
+    | "text-color-primary"
+    | "theme-btn"
+    | "theme-special-btn"
+    | "theme-enter-btn"
+    | "color-switch"
+    | "scroll";
+
+export function getColor(theme: Theme, component: ComponentType) {
+    if (theme === "blue") {
+        switch (component) {
+            case "bg":
+                return "bg-slate-700";
+            case "bg-dark":
+                return "bg-slate-800";
+            case "bg-darker":
+                return "bg-slate-900";
+            case "text-color-primary":
+                return "text-white";
+            case "theme-btn":
+                return "bg-neutral-100 border-neutral-400 transition hover:bg-white text-slate-800";
+            case "theme-special-btn":
+                return "bg-slate-500 border-slate-700 hover:bg-slate-400 transition text-white";
+            case "theme-enter-btn":
+                return "bg-red-500 border-red-700 hover:bg-red-400 transition text-white";
+            case "color-switch":
+                return "bg-orange-500";
+            case "scroll":
+                return "blue"
+            default:
+                return "";
+        }
+    }
+    // such that
+    return "";
 }
 ```
-```js
-const proudOfThisFunc = () => {
-  console.log('🎉')
+
+It feels like reinventing `class-variance-authority`. For every element that is theme-changeable, just pass the function call in the className attribute.
+
+```tsx
+ <div
+    className={`flex justify-between items-center w-full py-4 ${getColor(
+        theme,
+        "text-color-primary"
+    )}`}
+>
+  {/* ... */}
+</div>
+```
+
+Whenever the theme is changed, each component will change its color as well.
+
+#### Digit display
+
+When the content overflows, it needs to immediately scroll to the right end.
+
+```tsx
+const divRef = useRef<HTMLDivElement>(null);
+useEffect(() => {
+    if (divRef.current) {
+        divRef.current.scrollLeft += 50;
+    }
+}, [input]);
+
+return (
+  <div className={"..."} ref={divRef} >
+    <div className="flex-grow"></div>
+    {input.map((item, index) => {
+        return (
+            <p className="translate-y-[0.25rem]" key={index}>
+                {item}
+            </p>
+        );
+    })}    
+  </div>
+)
+```
+
+When the input length is shorter than the container, the flex-grow div will expand, making sure that our input content is aligned on the right side.
+
+When the input content overflows, `useEffect` call will scroll the container, making sure that it behaves just like a real calculator.
+
+#### Calculation
+
+Each input is stored in an array. When the user press enter, it checks whether the input the calculatable, and then uses `Function` to get the result.
+
+```tsx
+function handleInput(e: InputType) {
+  const lastElm = input[input.length - 1]??undefined;
+  if (e === "enter" && !Number.isNaN(Number(lastElm))) {
+    const changeX = input.map(d => {
+        if (d === "x") {
+            return "*"
+        }
+        return d
+    })
+    const result = Function("return " + changeX.join(""))();
+    setInput([`${result}`]);
+    return;
+  }  
 }
 ```
 
-If you want more help with writing markdown, we'd recommend checking out [The Markdown Guide](https://www.markdownguide.org/) to learn more.
+To make sure the input is calculatable, we have setup many conditions. It is almost impossible to have a invalid input.
 
-**Note: Delete this note and the content within this section and replace with your own learnings.**
+## Resources
 
-### Continued development
+- Google font - <https://fonts.google.com>
 
-Use this section to outline areas that you want to continue focusing on in future projects. These could be concepts you're still not completely comfortable with or techniques you found useful that you want to refine and perfect.
-
-**Note: Delete this note and the content within this section and replace with your own plans for continued development.**
-
-### Useful resources
-
-- [Example resource 1](https://www.example.com) - This helped me for XYZ reason. I really liked this pattern and will use it going forward.
-- [Example resource 2](https://www.example.com) - This is an amazing article which helped me finally understand XYZ. I'd recommend it to anyone still learning this concept.
-
-**Note: Delete this note and replace the list above with resources that helped you during the challenge. These could come in handy for anyone viewing your solution or for yourself when you look back on this project in the future.**
-
-## Author
-
-- Website - [Add your name here](https://www.your-site.com)
-- Frontend Mentor - [@yourusername](https://www.frontendmentor.io/profile/yourusername)
-- Twitter - [@yourusername](https://www.twitter.com/yourusername)
-
-**Note: Delete this note and add/remove/edit lines above based on what links you'd like to share.**
-
-## Acknowledgments
-
-This is where you can give a hat tip to anyone who helped you out on this project. Perhaps you worked in a team or got some inspiration from someone else's solution. This is the perfect place to give them some credit.
-
-**Note: Delete this note and edit this section's content as necessary. If you completed this challenge by yourself, feel free to delete this section entirely.**
+- TailwindCSS Docs - <https://tailwindcss.com/docs>
